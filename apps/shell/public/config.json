@@ -1,0 +1,7 @@
+{
+  "remotes": {
+    "people": "/people/assets/remoteEntry.js",
+    "delivery": "/delivery/assets/remoteEntry.js"
+  },
+  "breakRemote": null
+}

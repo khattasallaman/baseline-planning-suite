@@ -1,0 +1,21 @@
+{
+  "name": "baseline-planning-suite",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @baseline/contracts && npm run build -w @baseline/domain && npm run build -w @baseline/people && npm run build -w @baseline/delivery && npm run build -w @baseline/shell",
+    "test": "npm run test -w @baseline/domain",
+    "generate:seed": "node scripts/generate-seed.mjs",
+    "serve:local": "node scripts/serve-local.mjs",
+    "dev:shell": "npm run dev -w @baseline/shell",
+    "dev:people": "npm run dev -w @baseline/people",
+    "dev:delivery": "npm run dev -w @baseline/delivery"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

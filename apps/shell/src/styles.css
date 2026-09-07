@@ -1,0 +1,87 @@
+:root {
+  --ink: #111827;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --bar: #0b1f17;
+  --accent: #34d399;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: #f3f4f6; }
+
+.shell-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  background: var(--bar);
+  color: #ecfdf5;
+}
+
+.brand { display: flex; flex-direction: column; min-width: 8rem; }
+.mark { font-weight: 700; letter-spacing: 0.02em; font-size: 1.1rem; }
+.tagline { font-size: 0.75rem; color: #a7f3d0; }
+
+nav { display: flex; gap: 0.35rem; }
+
+nav button, .shell-controls button {
+  font: inherit;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #ecfdf5;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+nav button.active {
+  background: #064e3b;
+  border-color: var(--accent);
+}
+
+.shell-controls {
+  margin-left: auto;
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.shell-controls label {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: #a7f3d0;
+}
+
+.shell-controls select {
+  font: inherit;
+  padding: 0.3rem 0.4rem;
+}
+
+.shell-controls .ghost {
+  border-color: #374151;
+  align-self: end;
+}
+
+.shell-main { min-height: calc(100vh - 64px); }
+
+.shell-loading, .shell-error, .remote-fallback {
+  padding: 2rem;
+}
+
+.remote-fallback {
+  margin: 1.5rem;
+  background: #fff;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.muted { color: var(--muted); }
+
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 0.9em;
+}

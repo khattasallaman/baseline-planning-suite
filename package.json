@@ -8,6 +8,7 @@
   "scripts": {
     "build": "npm run build -w @baseline/contracts && npm run build -w @baseline/domain && npm run build -w @baseline/people && npm run build -w @baseline/delivery && npm run build -w @baseline/shell",
     "test": "npm run test -w @baseline/domain",
+    "typecheck": "npm run build -w @baseline/contracts && npm run build -w @baseline/domain && tsc -p apps/people --noEmit && tsc -p apps/delivery --noEmit && tsc -p apps/shell --noEmit",
     "generate:seed": "node scripts/generate-seed.mjs",
     "serve:local": "node scripts/serve-local.mjs",
     "dev:shell": "npm run dev -w @baseline/shell",
@@ -15,7 +16,6 @@
     "dev:delivery": "npm run dev -w @baseline/delivery"
   },
   "devDependencies": {
-    "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
 }

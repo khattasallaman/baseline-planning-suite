@@ -146,6 +146,16 @@ export function gridMonths(state: DeliveryState, projectId: ProjectId): YearMont
   return base;
 }
 
+/**
+ * Restore the shipped plan fixture. People's rates are left alone — they are not
+ * Delivery's to reset.
+ */
+export async function resetToSeed(): Promise<void> {
+  const rateSnapshot = memory?.rateSnapshot ?? null;
+  memory = { ...fromSeed(), ...(rateSnapshot ? { rateSnapshot } : {}) };
+  await persist();
+}
+
 async function persist(publishCapacity = true): Promise<void> {
   if (!memory) return;
   await idbSet(memory);

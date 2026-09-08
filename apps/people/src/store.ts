@@ -117,6 +117,14 @@ export async function initPeopleStore(): Promise<PeopleState> {
   return memory;
 }
 
+/** Restore the shipped fixture so the reference calculation is always reproducible. */
+export async function resetToSeed(): Promise<void> {
+  memory = fromSeed();
+  await idbSet(memory);
+  publishSnapshot();
+  notify();
+}
+
 async function persist(): Promise<void> {
   if (!memory) return;
   memory = { ...memory, revision: memory.revision + 1 };

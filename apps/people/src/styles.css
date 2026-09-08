@@ -98,6 +98,13 @@ tbody tr.selected {
   min-width: 240px;
 }
 
+.people-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .badge.over {
   display: inline-block;
   padding: 0.1rem 0.4rem;

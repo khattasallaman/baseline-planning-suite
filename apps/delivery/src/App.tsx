@@ -38,6 +38,7 @@ import {
   moveItem,
   ratesFor,
   renameItem,
+  resetToSeed,
   setAllocationHours,
   subscribeDelivery,
   type DeliveryState,
@@ -191,6 +192,14 @@ export default function DeliveryApp({
               ))}
             </select>
           </label>
+          <button
+            type="button"
+            className="ghost"
+            title="Restore the shipped plan fixture"
+            onClick={() => void resetToSeed()}
+          >
+            Reset plan
+          </button>
         </div>
       </header>
 

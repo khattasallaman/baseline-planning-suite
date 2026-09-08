@@ -13,6 +13,7 @@ import {
   getPeopleState,
   initPeopleStore,
   removeRate,
+  resetToSeed,
   subscribePeople,
   upsertRate,
   type PeopleState,
@@ -87,14 +88,24 @@ export default function PeopleApp({ currency = 'EUR', user }: PeopleAppProps) {
             {user ? ` · ${user.name}` : ''}
           </p>
         </div>
-        <label className="search">
-          <span className="sr-only">Search</span>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name, role, id…"
-          />
-        </label>
+        <div className="people-controls">
+          <label className="search">
+            <span className="sr-only">Search</span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, role, id…"
+            />
+          </label>
+          <button
+            type="button"
+            className="ghost"
+            title="Restore the shipped rate fixture"
+            onClick={() => void resetToSeed()}
+          >
+            Reset rates
+          </button>
+        </div>
       </header>
 
       <div className="people-layout">

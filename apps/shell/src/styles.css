@@ -79,6 +79,14 @@ nav button.active {
   overflow-x: hidden;
 }
 
+.shell-panel {
+  min-width: 0;
+}
+
+.shell-panel[hidden] {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .shell-bar {
     padding: 0.65rem 0.75rem;

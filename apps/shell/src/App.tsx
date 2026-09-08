@@ -137,8 +137,10 @@ export default function ShellApp() {
     return <div className="shell-loading">Loading shell configuration…</div>;
   }
 
-  const Active = route === 'people' ? PeopleRemote : DeliveryRemote;
-  const remoteName = route === 'people' ? 'People' : 'Delivery';
+  const panels: { route: Route; name: string; Remote: RemoteApp }[] = [
+    { route: 'people', name: 'People', Remote: PeopleRemote },
+    { route: 'delivery', name: 'Delivery', Remote: DeliveryRemote },
+  ];
 
   return (
     <div className="shell">
@@ -208,17 +210,29 @@ export default function ShellApp() {
         </div>
       </header>
 
+      {/*
+        Both remotes stay mounted so a change published by one reaches the other
+        without a reload; navigation only changes which panel is visible.
+      */}
       <main className="shell-main">
-        <RemoteErrorBoundary
-          name={remoteName}
-          resetKey={`${route}-${effectiveConfig.remotes[route]}`}
-        >
-          <Suspense
-            fallback={<div className="shell-loading">Loading {remoteName}…</div>}
+        {panels.map(({ route: panelRoute, name, Remote }) => (
+          <section
+            key={panelRoute}
+            className="shell-panel"
+            hidden={route !== panelRoute}
           >
-            <Active currency={currency} user={user} />
-          </Suspense>
-        </RemoteErrorBoundary>
+            <RemoteErrorBoundary
+              name={name}
+              resetKey={effectiveConfig.remotes[panelRoute]}
+            >
+              <Suspense
+                fallback={<div className="shell-loading">Loading {name}…</div>}
+              >
+                <Remote currency={currency} user={user} />
+              </Suspense>
+            </RemoteErrorBoundary>
+          </section>
+        ))}
       </main>
     </div>
   );

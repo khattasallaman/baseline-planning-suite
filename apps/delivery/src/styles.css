@@ -13,9 +13,13 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; }
+body { margin: 0; overflow-x: hidden; }
 
-.delivery-app { padding: 1.25rem 1.5rem 2rem; }
+.delivery-app {
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 .delivery-header {
   display: flex;
@@ -33,12 +37,20 @@ h1, h2 { margin: 0 0 0.35rem; font-weight: 600; }
 .controls {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .controls label {
   display: grid;
   gap: 0.25rem;
   font-size: 0.85rem;
+  min-width: 140px;
+  flex: 1 1 140px;
+}
+
+.controls select {
+  width: 100%;
+  max-width: 100%;
 }
 
 select, input, button {
@@ -74,17 +86,58 @@ button.danger { color: var(--danger); border-color: #fecaca; }
   margin-bottom: 0.75rem;
 }
 
+.mobile-tabs {
+  display: none;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.mobile-tabs button {
+  flex: 1;
+  background: #fff;
+  color: var(--ink);
+  border-color: var(--line);
+  min-height: 2.5rem;
+}
+
+.mobile-tabs button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .delivery-layout {
   display: grid;
-  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.6fr);
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
   gap: 1rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .wbs, .grid-wrap {
   background: var(--panel);
   border: 1px solid var(--line);
-  padding: 0.75rem;
+  padding: 0.85rem 0.9rem;
   min-height: 480px;
+  min-width: 0;
+}
+
+.wbs {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 10rem);
+}
+
+.wbs > div {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.grid-wrap {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .tree, .tree ul {
@@ -93,36 +146,149 @@ button.danger { color: var(--danger); border-color: #fecaca; }
   padding: 0;
 }
 
+.tree-item {
+  position: relative;
+}
+
 .tree-row {
   display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: center;
-  padding: 0.35rem 0;
-  border-bottom: 1px solid #eef2f0;
+  padding: 0.4rem 0.35rem;
+  border-radius: 4px;
+  border-bottom: none;
 }
 
-.tree-actions {
+.tree-row:hover {
+  background: #f3f6f4;
+}
+
+.tree-label {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.tree-label strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.tree-item.depth-0 > .tree-row strong {
+  font-size: 0.98rem;
+}
+
+.tree-item.depth-2 > .tree-row strong {
+  font-weight: 500;
+  color: #33403a;
+}
+
+.level-tag {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 0.05rem 0.28rem;
+  border-radius: 3px;
+}
+
+.tree-guide {
+  display: none;
+}
+
+.tree-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.menu-trigger {
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 4px;
+  line-height: 1;
+  font-size: 1.1rem;
+}
+
+.tree-row:hover .menu-trigger,
+.menu-trigger[aria-expanded="true"] {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--ink);
+}
+
+.menu-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 20;
+  min-width: 9rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 20px rgba(20, 32, 27, 0.12);
+  display: grid;
+  padding: 0.25rem;
+}
+
+.menu-pop button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  padding: 0.45rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.menu-pop button:hover {
+  background: #f3f6f4;
+}
+
+.menu-pop .danger-item {
+  color: var(--danger);
 }
 
 .inline-form {
   display: flex;
   gap: 0.4rem;
   margin-top: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
 }
 
+.inline-form input {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+/* Only the table scrolls — not the page */
 .grid-scroll {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 70vh;
+  width: 100%;
+  min-width: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
 }
 
 .staffing {
   border-collapse: collapse;
   width: max-content;
-  min-width: 100%;
   font-size: 0.88rem;
 }
 
@@ -145,7 +311,8 @@ button.danger { color: var(--danger); border-color: #fecaca; }
   left: 0;
   background: #fff;
   z-index: 2;
-  min-width: 180px;
+  min-width: 160px;
+  max-width: 200px;
 }
 
 .staffing th:first-child { z-index: 3; background: #f8faf9; }
@@ -168,7 +335,8 @@ tr.derived { background: #f8fafc; }
   background: transparent;
   border: 1px dashed transparent;
   color: inherit;
-  padding: 0.2rem 0.3rem;
+  padding: 0.35rem 0.3rem;
+  min-height: 2.25rem;
 }
 
 .cell-btn:hover { border-color: var(--accent); }
@@ -177,11 +345,90 @@ tr.derived { background: #f8fafc; }
 .cell-input {
   width: 5.5rem;
   text-align: right;
+  min-height: 2.25rem;
+  font-size: 1rem;
 }
 
 .panel { padding: 1.5rem; }
 .panel.error { color: var(--danger); }
 
-@media (max-width: 980px) {
-  .delivery-layout { grid-template-columns: 1fr; }
+/* iPad / narrow desktop */
+@media (max-width: 1100px) {
+  .delivery-layout {
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  }
+
+  .staffing {
+    font-size: 0.82rem;
+  }
+}
+
+/* Phone + small tablet portrait */
+@media (max-width: 900px) {
+  .delivery-app {
+    padding: 0.85rem 0.75rem 1.5rem;
+  }
+
+  .delivery-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .delivery-header .muted {
+    font-size: 0.82rem;
+  }
+
+  .mobile-tabs {
+    display: flex;
+  }
+
+  .delivery-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .wbs.mobile-hide,
+  .grid-wrap.mobile-hide {
+    display: none;
+  }
+
+  .wbs,
+  .grid-wrap {
+    min-height: 0;
+  }
+
+  .grid-scroll {
+    max-height: min(70vh, calc(100dvh - 14rem));
+  }
+
+  .staffing th:first-child,
+  .staffing td:first-child {
+    min-width: 120px;
+    max-width: 140px;
+  }
+
+  .tree-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .menu-trigger {
+    border-color: var(--line);
+    background: #fff;
+    color: var(--ink);
+  }
+}
+
+@media (max-width: 480px) {
+  .staffing {
+    font-size: 0.78rem;
+  }
+
+  .staffing th,
+  .staffing td {
+    padding: 0.3rem 0.35rem;
+  }
+
+  .cell-input {
+    width: 4.5rem;
+  }
 }

@@ -83,6 +83,7 @@ export default function DeliveryApp({
   const [projectId, setProjectId] = useState<ProjectId>(asProjectId('proj-001'));
   const [unit, setUnit] = useState<DisplayUnit>('personMonths');
   const [message, setMessage] = useState<string | null>(null);
+  const [mobilePanel, setMobilePanel] = useState<'wbs' | 'grid'>('grid');
 
   const state = useSyncExternalStore(
     subscribeDelivery,
@@ -194,8 +195,29 @@ export default function DeliveryApp({
         </div>
       ) : null}
 
+      <div className="mobile-tabs" role="tablist" aria-label="Delivery panels">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobilePanel === 'wbs'}
+          className={mobilePanel === 'wbs' ? 'active' : undefined}
+          onClick={() => setMobilePanel('wbs')}
+        >
+          Breakdown
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={mobilePanel === 'grid'}
+          className={mobilePanel === 'grid' ? 'active' : undefined}
+          onClick={() => setMobilePanel('grid')}
+        >
+          Staffing grid
+        </button>
+      </div>
+
       <div className="delivery-layout">
-        <aside className="wbs">
+        <aside className={`wbs${mobilePanel === 'grid' ? ' mobile-hide' : ''}`}>
           <h2>Work breakdown</h2>
           <WbsTree
             nodes={tree}
@@ -220,7 +242,7 @@ export default function DeliveryApp({
           />
         </aside>
 
-        <section className="grid-wrap">
+        <section className={`grid-wrap${mobilePanel === 'wbs' ? ' mobile-hide' : ''}`}>
           <div className="grid-scroll">
             <table className="staffing">
               <thead>
@@ -390,66 +412,105 @@ function WbsNode({
   ) => Promise<void>;
 }) {
   const depth = depthOf(allItems, node.item.id);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const levelLabel = depth === 0 ? 'root' : depth === 1 ? 'package' : 'leaf';
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [menuOpen]);
+
   return (
-    <li>
-      <div className="tree-row" style={{ paddingLeft: `${depth * 0.75}rem` }}>
-        <strong>{node.item.name}</strong>
-        <span className="tree-actions">
-          <button
-            type="button"
-            className="ghost"
-            onClick={async () => {
-              const name = window.prompt('Rename', node.item.name);
-              if (name) await onRename(node.item.id, name);
-            }}
-          >
-            Rename
-          </button>
-          {depth < 2 ? (
-            <button
-              type="button"
-              className="ghost"
-              onClick={async () => {
-                const name = window.prompt('New child name');
-                if (name) await onAddChild(node.item.id, name);
-              }}
-            >
-              Add child
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className="ghost"
-            onClick={async () => {
-              const options = allItems
-                .filter((i) => i.id !== node.item.id)
-                .map((i) => `${i.id}`)
-                .slice(0, 40)
-                .join(', ');
-              const raw = window.prompt(
-                `Move under item id (blank = root). Examples: ${options}`,
-              );
-              if (raw === null) return;
-              await onMove(
-                node.item.id,
-                raw.trim() ? asBreakdownItemId(raw.trim()) : null,
-              );
-            }}
-          >
-            Move
-          </button>
-          <button
-            type="button"
-            className="danger ghost"
-            onClick={async () => {
-              if (window.confirm(`Delete “${node.item.name}” and descendants?`)) {
-                await onDelete(node.item.id);
-              }
-            }}
-          >
-            Delete
-          </button>
+    <li className={`tree-item depth-${depth}`}>
+      <div className="tree-row" style={{ paddingLeft: `${0.35 + depth * 0.9}rem` }}>
+        <span className="tree-label">
+          <span className="tree-guide" aria-hidden="true" />
+          <strong title={node.item.name}>{node.item.name}</strong>
+          <span className="level-tag">{levelLabel}</span>
         </span>
+        <div className="tree-menu">
+          <button
+            type="button"
+            className="menu-trigger"
+            aria-label={`Actions for ${node.item.name}`}
+            aria-expanded={menuOpen}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((open) => !open);
+            }}
+          >
+            ⋯
+          </button>
+          {menuOpen ? (
+            <div
+              className="menu-pop"
+              role="menu"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  const name = window.prompt('Rename', node.item.name);
+                  if (name) await onRename(node.item.id, name);
+                }}
+              >
+                Rename
+              </button>
+              {depth < 2 ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={async () => {
+                    setMenuOpen(false);
+                    const name = window.prompt('New child name');
+                    if (name) await onAddChild(node.item.id, name);
+                  }}
+                >
+                  Add child
+                </button>
+              ) : null}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  const options = allItems
+                    .filter((i) => i.id !== node.item.id)
+                    .map((i) => `${i.id} — ${i.name}`)
+                    .slice(0, 30)
+                    .join('\n');
+                  const raw = window.prompt(
+                    `Move under item id (blank = root):\n${options}`,
+                  );
+                  if (raw === null) return;
+                  await onMove(
+                    node.item.id,
+                    raw.trim() ? asBreakdownItemId(raw.trim()) : null,
+                  );
+                }}
+              >
+                Move
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="danger-item"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  if (window.confirm(`Delete “${node.item.name}” and descendants?`)) {
+                    await onDelete(node.item.id);
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
       {node.children.length > 0 ? (
         <ul>

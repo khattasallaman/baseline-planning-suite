@@ -684,6 +684,7 @@ function EditableCell({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [opened, setOpened] = useState('');
 
   if (editing) {
     return (
@@ -696,6 +697,8 @@ function EditableCell({
           setEditing(false);
           const n = Number(draft);
           if (!Number.isFinite(n)) return;
+          // Opening and leaving a cell must not persist the displayed rounding.
+          if (draft.trim() === opened) return;
           await onCommit(n);
         }}
         onKeyDown={(e) => {
@@ -713,6 +716,7 @@ function EditableCell({
       title={overTitle}
       onClick={() => {
         setDraft(String(display));
+        setOpened(String(display));
         setEditing(true);
       }}
     >

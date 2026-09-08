@@ -104,16 +104,24 @@ export default function DeliveryApp({
     [ready, state, projectId],
   );
 
+  /**
+   * R5: the overage is attributed to the most recently edited allocation in that
+   * person-month, named by person and work package so the cause is identifiable.
+   */
   const overByAlloc = useMemo(() => {
     const map = new Map<AllocationId, string>();
     if (!ready) return map;
     for (const o of computeOverCapacity(state)) {
-      if (o.causingAllocationId) {
-        map.set(
-          o.causingAllocationId,
-          `Over capacity ${o.month}: ${roundTo(o.totalHours, 2)}h / ${roundTo(o.capacityHours, 2)}h`,
-        );
-      }
+      if (!o.causingAllocationId) continue;
+      const alloc = state.allocations.find((a) => a.id === o.causingAllocationId);
+      const item = state.items.find((i) => i.id === alloc?.breakdownItemId);
+      const person = employeeById(o.employeeId)?.name ?? o.employeeId;
+      map.set(
+        o.causingAllocationId,
+        `Over capacity in ${o.month}: ${person} is committed ` +
+          `${roundTo(o.totalHours, 2)}h against ${roundTo(o.capacityHours, 2)}h capacity ` +
+          `across all projects. Caused by the latest edit on ${item?.name ?? 'this assignment'}.`,
+      );
     }
     return map;
   }, [ready, state]);

@@ -61,6 +61,10 @@ Two product teams never import each other's **app** source. They only share `con
 
 `Allocation.amount` is always hours. Person-months, % of capacity, and cost are conversions at the UI edge (`hoursToDisplay` / `displayToHours`). One person-month = `weeklyHours × (workingDaysInMonth / 5)` — varies by person and month.
 
+### Display currency
+
+`RateRecord.hourlyCost` is stored in EUR — one currency in the data, like one unit in the data. The shell's display currency is applied at the same edge as the unit conversions (`fromEur` / `toEur` in `@baseline/domain`), so switching currency never rewrites stored rates or allocations. People shows and accepts rate edits in the active currency and converts back to EUR before saving. FX rates are fixed constants for the exercise, not a live feed.
+
 ### Who computes cost?
 
 **Delivery computes cost** from rate records People publishes.

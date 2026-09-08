@@ -8,7 +8,7 @@ import type {
   ShellRuntimeProps,
 } from '@baseline/contracts';
 import { asIsoDate, asRateRecordId, getBus } from '@baseline/contracts';
-import { sortRates } from '@baseline/domain';
+import { currencySymbol, fromEur, roundTo, sortRates, toEur } from '@baseline/domain';
 import {
   getPeopleState,
   initPeopleStore,
@@ -83,7 +83,7 @@ export default function PeopleApp({ currency = 'EUR', user }: PeopleAppProps) {
         <div>
           <h1>People</h1>
           <p className="muted">
-            Employee register · rates owned here · display {currency}
+            Employee register · rates stored in EUR · display {currency}
             {user ? ` · ${user.name}` : ''}
           </p>
         </div>
@@ -139,6 +139,7 @@ export default function PeopleApp({ currency = 'EUR', user }: PeopleAppProps) {
             <RateEditor
               employee={selected}
               rates={selectedRates}
+              currency={currency}
               overMonths={overCapacity.filter((o) => o.employeeId === selected.id)}
               onSave={async (input) => {
                 await upsertRate(selected.id, input);
@@ -159,12 +160,14 @@ export default function PeopleApp({ currency = 'EUR', user }: PeopleAppProps) {
 function RateEditor({
   employee,
   rates,
+  currency,
   overMonths,
   onSave,
   onRemove,
 }: {
   employee: Employee;
   rates: RateRecord[];
+  currency: ShellRuntimeProps['currency'];
   overMonths: OverCapacityDetail[];
   onSave: (input: {
     id?: RateRecord['id'];
@@ -177,6 +180,7 @@ function RateEditor({
   const [hourlyCost, setHourlyCost] = useState('95.00');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const symbol = currencySymbol(currency);
 
   return (
     <div>
@@ -194,92 +198,95 @@ function RateEditor({
 
       <h3>Rate history</h3>
       <p className="muted small">
-        A rate runs from <code>validFrom</code> (inclusive) until the next one starts. Edits
-        reach Delivery without reload.
+        Stored in EUR; shown in {currency}. Edits are entered in {currency} and converted
+        back to EUR. A rate runs from <code>validFrom</code> (inclusive) until the next one.
       </p>
 
       <table className="rates">
         <thead>
           <tr>
             <th>Valid from</th>
-            <th>Hourly cost</th>
+            <th>Hourly cost ({currency})</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          {rates.map((rate) => (
-            <tr key={rate.id}>
-              <td>
-                {editingId === rate.id ? (
-                  <input
-                    type="date"
-                    value={validFrom}
-                    onChange={(e) => setValidFrom(e.target.value)}
-                  />
-                ) : (
-                  rate.validFrom
-                )}
-              </td>
-              <td>
-                {editingId === rate.id ? (
-                  <input
-                    value={hourlyCost}
-                    onChange={(e) => setHourlyCost(e.target.value)}
-                    inputMode="decimal"
-                  />
-                ) : (
-                  rate.hourlyCost.toFixed(2)
-                )}
-              </td>
-              <td className="actions">
-                {editingId === rate.id ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await onSave({
-                          id: rate.id,
-                          validFrom: asIsoDate(validFrom),
-                          hourlyCost: Number(hourlyCost),
-                        });
-                        setEditingId(null);
-                        setMessage('Rate updated — Delivery notified.');
-                      }}
-                    >
-                      Save
-                    </button>
-                    <button type="button" className="ghost" onClick={() => setEditingId(null)}>
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="ghost"
-                      onClick={() => {
-                        setEditingId(rate.id);
-                        setValidFrom(rate.validFrom);
-                        setHourlyCost(String(rate.hourlyCost));
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="danger ghost"
-                      onClick={async () => {
-                        await onRemove(rate.id);
-                        setMessage('Rate removed.');
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
+          {rates.map((rate) => {
+            const displayCost = roundTo(fromEur(rate.hourlyCost, currency), 2);
+            return (
+              <tr key={rate.id}>
+                <td>
+                  {editingId === rate.id ? (
+                    <input
+                      type="date"
+                      value={validFrom}
+                      onChange={(e) => setValidFrom(e.target.value)}
+                    />
+                  ) : (
+                    rate.validFrom
+                  )}
+                </td>
+                <td>
+                  {editingId === rate.id ? (
+                    <input
+                      value={hourlyCost}
+                      onChange={(e) => setHourlyCost(e.target.value)}
+                      inputMode="decimal"
+                    />
+                  ) : (
+                    `${symbol}${displayCost.toFixed(2)}`
+                  )}
+                </td>
+                <td className="actions">
+                  {editingId === rate.id ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await onSave({
+                            id: rate.id,
+                            validFrom: asIsoDate(validFrom),
+                            hourlyCost: toEur(Number(hourlyCost), currency),
+                          });
+                          setEditingId(null);
+                          setMessage('Rate updated — Delivery notified.');
+                        }}
+                      >
+                        Save
+                      </button>
+                      <button type="button" className="ghost" onClick={() => setEditingId(null)}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() => {
+                          setEditingId(rate.id);
+                          setValidFrom(rate.validFrom);
+                          setHourlyCost(String(displayCost));
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="danger ghost"
+                        onClick={async () => {
+                          await onRemove(rate.id);
+                          setMessage('Rate removed.');
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -289,7 +296,7 @@ function RateEditor({
           e.preventDefault();
           await onSave({
             validFrom: asIsoDate(validFrom),
-            hourlyCost: Number(hourlyCost),
+            hourlyCost: toEur(Number(hourlyCost), currency),
           });
           setMessage('Rate added — Delivery notified.');
         }}
@@ -305,7 +312,7 @@ function RateEditor({
           />
         </label>
         <label>
-          Hourly cost
+          Hourly cost ({currency})
           <input
             value={hourlyCost}
             onChange={(e) => setHourlyCost(e.target.value)}

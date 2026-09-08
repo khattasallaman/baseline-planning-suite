@@ -14,11 +14,14 @@ import type {
 import { asBreakdownItemId, asProjectId, asYearMonth } from '@baseline/contracts';
 import {
   DISPLAY_PRECISION,
+  currencySymbol,
   displayToHours,
+  fromEur,
   hasRateCoverageForMonth,
   hoursToDisplay,
   largestRemainderRound,
   roundTo,
+  toEur,
 } from '@baseline/domain';
 import {
   addChild,
@@ -144,7 +147,7 @@ export default function DeliveryApp({
         <div>
           <h1>Delivery</h1>
           <p className="muted">
-            Work breakdown + staffing grid · costs from People rates · {currency}
+            Work breakdown + staffing grid · rates in EUR · display {currency}
             {user ? ` · ${user.name}` : ''}
             {state.rateSnapshot
               ? ` · rates rev ${state.rateSnapshot.revision}`
@@ -499,11 +502,13 @@ function DerivedRow({
         if (a.breakdownItemId !== leafId || a.month !== month) continue;
         const emp = employeeById(a.employeeId);
         if (!emp) continue;
-        sum += hoursToDisplay(a.amount, unit, {
+        let v = hoursToDisplay(a.amount, unit, {
           weeklyHours: emp.weeklyHours,
           month,
           employeeRates: ratesFor(emp.id),
         });
+        if (unit === 'cost') v = fromEur(v, currency);
+        sum += v;
       }
     }
     return sum;
@@ -549,11 +554,13 @@ function PersonRow({
 }) {
   const exact = months.map((month) => {
     const alloc = findAllocation(state, item.id, employee.id, month);
-    return hoursToDisplay(alloc?.amount ?? 0, unit, {
+    let v = hoursToDisplay(alloc?.amount ?? 0, unit, {
       weeklyHours: employee.weeklyHours,
       month,
       employeeRates: ratesFor(employee.id),
     });
+    if (unit === 'cost') v = fromEur(v, currency);
+    return v;
   });
   const totalExact = exact.reduce((a, b) => a + b, 0);
   const rounded = largestRemainderRound(exact, DISPLAY_PRECISION[unit]);
@@ -575,7 +582,9 @@ function PersonRow({
               noRate={!covered && (alloc?.amount ?? 0) > 0}
               overTitle={cause}
               onCommit={async (displayValue) => {
-                const hours = displayToHours(displayValue, unit, {
+                const eurValue =
+                  unit === 'cost' ? toEur(displayValue, currency) : displayValue;
+                const hours = displayToHours(eurValue, unit, {
                   weeklyHours: employee.weeklyHours,
                   month,
                   employeeRates: ratesFor(employee.id),
@@ -670,8 +679,7 @@ function formatDisplay(
   const p = DISPLAY_PRECISION[unit];
   const n = roundTo(value, p).toFixed(p);
   if (unit === 'cost') {
-    const symbol = currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : '$';
-    return `${symbol}${n}`;
+    return `${currencySymbol(currency)}${n}`;
   }
   if (unit === 'percent') return `${n}%`;
   return n;

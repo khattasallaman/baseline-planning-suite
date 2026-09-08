@@ -59,6 +59,9 @@ const empty: DeliveryState = {
   horizonMonths: 12,
 };
 
+/** Rows offered on a leaf that has no allocations yet, so one can be typed in. */
+const UNSTAFFED_LEAF_ROWS = 5;
+
 const UNIT_LABEL: Record<DisplayUnit, string> = {
   hours: 'Hours',
   personMonths: 'Person-months',
@@ -341,7 +344,9 @@ function flattenRows(
             (a) => a.breakdownItemId === node.item.id && a.employeeId === p.id,
           ),
         );
-        const listPeople = assigned.length > 0 ? assigned : people.slice(0, 5);
+        // An unstaffed leaf still needs rows to type the first allocation into.
+        const listPeople =
+          assigned.length > 0 ? assigned : people.slice(0, UNSTAFFED_LEAF_ROWS);
         for (const employee of listPeople) {
           out.push({ kind: 'person', item: node.item, employee, depth: depth + 1 });
         }

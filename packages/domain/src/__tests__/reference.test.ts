@@ -149,3 +149,11 @@ describe('largest-remainder totals (R3)', () => {
     expect(largestRemainderRound([], 2)).toEqual([]);
   });
 });
+
+describe('display currency FX', () => {
+  it('converts EUR cost to USD and back', async () => {
+    const { fromEur, toEur } = await import('../index');
+    expect(fromEur(7880, 'USD')).toBeCloseTo(8510.4, 5);
+    expect(toEur(8510.4, 'USD')).toBeCloseTo(7880, 5);
+  });
+});

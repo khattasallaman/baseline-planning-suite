@@ -335,3 +335,34 @@ export function dayDiff(a: IsoDate, b: IsoDate): number {
   const db = new Date(`${b}T00:00:00.000Z`).getTime();
   return Math.round((db - da) / MS_PER_DAY);
 }
+
+/**
+ * Rates are stored in EUR. Shell display currency converts at the edge only.
+ * Fixed demo FX — not live market data.
+ */
+export const FX_FROM_EUR: Record<'EUR' | 'USD' | 'GBP', number> = {
+  EUR: 1,
+  USD: 1.08,
+  GBP: 0.86,
+};
+
+export function fromEur(
+  amountEur: number,
+  currency: 'EUR' | 'USD' | 'GBP',
+): number {
+  return amountEur * FX_FROM_EUR[currency];
+}
+
+export function toEur(
+  amount: number,
+  currency: 'EUR' | 'USD' | 'GBP',
+): number {
+  const rate = FX_FROM_EUR[currency];
+  return rate === 0 ? 0 : amount / rate;
+}
+
+export function currencySymbol(currency: 'EUR' | 'USD' | 'GBP'): string {
+  if (currency === 'EUR') return '€';
+  if (currency === 'GBP') return '£';
+  return '$';
+}

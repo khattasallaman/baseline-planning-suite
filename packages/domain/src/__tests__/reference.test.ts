@@ -11,6 +11,7 @@ import {
   blendedRate,
   countWorkingDaysInMonth,
   displayToHours,
+  hasRateCoverageForMonth,
   hoursToDisplay,
   largestRemainderRound,
   listWorkingDaysInMonth,
@@ -115,6 +116,46 @@ describe('working-day arithmetic', () => {
   });
 });
 
+describe('more than one rate change in a month', () => {
+  const thirdRate: RateRecord = {
+    id: asRateRecordId('rate-okafor-3'),
+    employeeId: EMP,
+    validFrom: asIsoDate('2026-03-23'),
+    hourlyCost: 110,
+  };
+
+  it('yields one slice per boundary, covering every working day', () => {
+    const slices = rateSlicesForMonth(MARCH, [...okaforRates, thirdRate]);
+    expect(slices.map((s) => s.workingDays)).toEqual([8, 7, 7]);
+    expect(slices.map((s) => s.hourlyCost)).toEqual([80, 95, 110]);
+    const covered = slices.reduce((sum, s) => sum + s.workingDays, 0);
+    expect(covered).toBe(countWorkingDaysInMonth(MARCH));
+  });
+
+  it('prices each slice at its own rate', () => {
+    // 4 h/working day × (8 × 80 + 7 × 95 + 7 × 110)
+    const cost = allocationCost(88, MARCH, [...okaforRates, thirdRate]);
+    expect(roundTo(cost, 2)).toBe(8300);
+  });
+
+  it('a boundary on a weekend takes effect on the next working day', () => {
+    const saturday: RateRecord = {
+      id: asRateRecordId('rate-okafor-sat'),
+      employeeId: EMP,
+      validFrom: asIsoDate('2026-03-14'),
+      hourlyCost: 95,
+    };
+    const slices = rateSlicesForMonth(MARCH, [okaforRates[0], saturday]);
+    expect(slices.map((s) => s.workingDays)).toEqual([10, 12]);
+    expect(roundTo(allocationCost(88, MARCH, [okaforRates[0], saturday]), 2)).toBe(7760);
+  });
+
+  it('removing a rate retroactively reprices the month', () => {
+    // With the 12 Mar record gone the whole month falls back to €80/h.
+    expect(roundTo(allocationCost(88, MARCH, [okaforRates[0]]), 2)).toBe(7040);
+  });
+});
+
 describe('unit conversion stability (R2)', () => {
   it('hours → personMonths → hours preserves value', () => {
     const ctx = {
@@ -124,6 +165,28 @@ describe('unit conversion stability (R2)', () => {
     };
     const back = displayToHours(hoursToDisplay(88, 'personMonths', ctx), 'personMonths', ctx);
     expect(back).toBe(88);
+  });
+
+  it('hours → percent → hours preserves value', () => {
+    const ctx = {
+      weeklyHours: 40 as const,
+      month: MARCH,
+      employeeRates: okaforRates,
+    };
+    expect(displayToHours(hoursToDisplay(88, 'percent', ctx), 'percent', ctx)).toBe(88);
+  });
+
+  it('a month with no rate cover prices at zero and is markable', () => {
+    const early = asYearMonth('2024-06');
+    expect(hasRateCoverageForMonth(early, okaforRates)).toBe(false);
+    expect(hasRateCoverageForMonth(MARCH, okaforRates)).toBe(true);
+    expect(
+      hoursToDisplay(88, 'cost', {
+        weeklyHours: 40,
+        month: early,
+        employeeRates: okaforRates,
+      }),
+    ).toBe(0);
   });
 
   it('person-month size varies by weekly hours', () => {
@@ -143,6 +206,27 @@ describe('largest-remainder totals (R3)', () => {
     );
     expect(sum).toBe(roundTo(3.012, 2));
     expect(rounded.reduce((a, b) => a + b, 0)).toBeCloseTo(sum, 10);
+  });
+
+  it('reconciles where independent rounding would not', () => {
+    // Rounding each cell on its own gives 0.34 + 0.34 + 0.33 = 1.01 against a 1.00 total.
+    const values = [0.335, 0.335, 0.33];
+    const rounded = largestRemainderRound(values, 2);
+    const displayedTotal = roundTo(
+      values.reduce((a, b) => a + b, 0),
+      2,
+    );
+    expect(roundTo(rounded.reduce((a, b) => a + b, 0), 2)).toBe(displayedTotal);
+    expect(rounded).toHaveLength(values.length);
+  });
+
+  it('keeps each cell within one display unit of its exact value', () => {
+    const values = [1.006, 2.004, 3.005, 0.985];
+    const rounded = largestRemainderRound(values, 2);
+    rounded.forEach((r, i) => expect(Math.abs(r - values[i]!)).toBeLessThanOrEqual(0.01));
+    expect(roundTo(rounded.reduce((a, b) => a + b, 0), 2)).toBe(
+      roundTo(values.reduce((a, b) => a + b, 0), 2),
+    );
   });
 
   it('empty input', () => {

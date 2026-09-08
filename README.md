@@ -16,6 +16,10 @@ If Docker Desktop is not running and you already have a local build:
 npm install && npm run generate:seed && npm run build && npm run serve:local
 ```
 
+### Back to the fixture
+
+Each remote owns a reset for its own data: **Reset rates** in the People header, **Reset plan** in the Delivery header. Edits persist in IndexedDB, so this is how you get back to the shipped seed — and back to the R1 reference numbers — after typing test values in.
+
 ### Break a remote on purpose
 
 In the shell header, set **Break remote** to `People` or `Delivery`. That points the runtime loader at a missing `remoteEntry.BROKEN.js`. The shell stays up and shows an in-place fallback for that panel.
@@ -28,6 +32,7 @@ Alternatively edit `/config.json` (served by nginx) and change a remote URL, the
 npm install
 npm run generate:seed
 npm run test
+npm run typecheck                  # strict, no `any`, across all five packages
 npm run dev -w @baseline/people    # :3001
 npm run dev -w @baseline/delivery  # :3002
 npm run dev -w @baseline/shell     # :3000 — set config remotes to localhost ports
@@ -76,6 +81,8 @@ People remains the source of truth for employees and rates. On every rate change
 ### Transport
 
 `BaselineBus` (`packages/contracts`): in-window handlers + `BroadcastChannel` + `CustomEvent`. Federated remotes share one JS realm; the channel also covers multiple tabs.
+
+Events are fire-and-forget with no retained last value, so a listener only hears what is published while it is subscribed. The shell therefore keeps **both remotes mounted** and lets navigation change which panel is visible. A rate edited in People reaches the Delivery cost view immediately, and Delivery's over-capacity set reaches People, without either app polling or reloading.
 
 | Event | Direction | Payload |
 |-------|-----------|---------|

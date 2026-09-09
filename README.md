@@ -103,11 +103,11 @@ IndexedDB per remote (`baseline-people`, `baseline-delivery`). First visit hydra
 - Shell does **not** bake remote URLs into the bundle — it loads `/config.json` at runtime and fetches `remoteEntry.js` dynamically (`apps/shell/src/loadRemote.ts`)
 - Each remote is one codebase / one build for **standalone** (`main.tsx`) and **hosted** (`exposes: { './App' }`)
 
-### Parent / child WBS rule (R4)
+### Parents are derived (R3)
 
-Adding a child under a leaf **moves** that leaf's allocations onto the new child. Silent loss is impossible; the UI explains the move.
+Adding a child under a leaf **moves** that leaf's allocations onto the new child. Silent loss is impossible; the UI explains the move. Parent effort and cost are read-only rollups.
 
-### Capacity (R5)
+### Capacity is cross-project (R4)
 
 Capacity is 100% of that person's person-month hours, summed **across every project**. Over-capacity is flagged († on the causing allocation — most recently edited), never blocked. People listens to `baseline:over-capacity` and badges oversubscribed employees.
 

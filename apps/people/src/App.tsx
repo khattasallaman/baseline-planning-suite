@@ -168,6 +168,18 @@ export default function PeopleApp({ currency = 'EUR', user }: PeopleAppProps) {
   );
 }
 
+/**
+ * A rate being typed, tagged with the currency it was entered in so that changing
+ * the display currency mid-edit cannot rescale what gets stored.
+ */
+interface RateDraft {
+  validFrom: string;
+  cost: string;
+  currency: ShellRuntimeProps['currency'];
+}
+
+type EditDraft = RateDraft & { id: RateRecord['id'] };
+
 function RateEditor({
   employee,
   rates,
@@ -187,9 +199,12 @@ function RateEditor({
   }) => Promise<void>;
   onRemove: (id: string) => Promise<void>;
 }) {
-  const [validFrom, setValidFrom] = useState('2026-03-12');
-  const [hourlyCost, setHourlyCost] = useState('95.00');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
+  const [addDraft, setAddDraft] = useState<RateDraft>({
+    validFrom: '',
+    cost: '',
+    currency,
+  });
   const [message, setMessage] = useState<string | null>(null);
   const symbol = currencySymbol(currency);
 
@@ -224,24 +239,29 @@ function RateEditor({
         <tbody>
           {rates.map((rate) => {
             const displayCost = roundTo(fromEur(rate.hourlyCost, currency), 2);
+            const editing = editDraft?.id === rate.id ? editDraft : null;
             return (
               <tr key={rate.id}>
                 <td>
-                  {editingId === rate.id ? (
+                  {editing ? (
                     <input
                       type="date"
-                      value={validFrom}
-                      onChange={(e) => setValidFrom(e.target.value)}
+                      value={editing.validFrom}
+                      onChange={(e) =>
+                        setEditDraft({ ...editing, validFrom: e.target.value })
+                      }
                     />
                   ) : (
                     rate.validFrom
                   )}
                 </td>
                 <td>
-                  {editingId === rate.id ? (
+                  {editing ? (
                     <input
-                      value={hourlyCost}
-                      onChange={(e) => setHourlyCost(e.target.value)}
+                      value={editing.cost}
+                      onChange={(e) =>
+                        setEditDraft({ ...editing, cost: e.target.value, currency })
+                      }
                       inputMode="decimal"
                     />
                   ) : (
@@ -249,23 +269,27 @@ function RateEditor({
                   )}
                 </td>
                 <td className="actions">
-                  {editingId === rate.id ? (
+                  {editing ? (
                     <>
                       <button
                         type="button"
                         onClick={async () => {
                           await onSave({
                             id: rate.id,
-                            validFrom: asIsoDate(validFrom),
-                            hourlyCost: toEur(Number(hourlyCost), currency),
+                            validFrom: asIsoDate(editing.validFrom),
+                            hourlyCost: toEur(Number(editing.cost), editing.currency),
                           });
-                          setEditingId(null);
+                          setEditDraft(null);
                           setMessage('Rate updated — Delivery notified.');
                         }}
                       >
                         Save
                       </button>
-                      <button type="button" className="ghost" onClick={() => setEditingId(null)}>
+                      <button
+                        type="button"
+                        className="ghost"
+                        onClick={() => setEditDraft(null)}
+                      >
                         Cancel
                       </button>
                     </>
@@ -274,11 +298,14 @@ function RateEditor({
                       <button
                         type="button"
                         className="ghost"
-                        onClick={() => {
-                          setEditingId(rate.id);
-                          setValidFrom(rate.validFrom);
-                          setHourlyCost(String(displayCost));
-                        }}
+                        onClick={() =>
+                          setEditDraft({
+                            id: rate.id,
+                            validFrom: rate.validFrom,
+                            cost: String(displayCost),
+                            currency,
+                          })
+                        }
                       >
                         Edit
                       </button>
@@ -306,9 +333,10 @@ function RateEditor({
         onSubmit={async (e) => {
           e.preventDefault();
           await onSave({
-            validFrom: asIsoDate(validFrom),
-            hourlyCost: toEur(Number(hourlyCost), currency),
+            validFrom: asIsoDate(addDraft.validFrom),
+            hourlyCost: toEur(Number(addDraft.cost), addDraft.currency),
           });
+          setAddDraft({ validFrom: '', cost: '', currency });
           setMessage('Rate added — Delivery notified.');
         }}
       >
@@ -317,17 +345,20 @@ function RateEditor({
           Valid from
           <input
             type="date"
-            value={validFrom}
-            onChange={(e) => setValidFrom(e.target.value)}
+            value={addDraft.validFrom}
+            onChange={(e) => setAddDraft({ ...addDraft, validFrom: e.target.value })}
             required
           />
         </label>
         <label>
           Hourly cost ({currency})
           <input
-            value={hourlyCost}
-            onChange={(e) => setHourlyCost(e.target.value)}
+            value={addDraft.cost}
+            onChange={(e) =>
+              setAddDraft({ ...addDraft, cost: e.target.value, currency })
+            }
             inputMode="decimal"
+            placeholder="0.00"
             required
           />
         </label>

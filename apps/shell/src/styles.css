@@ -70,7 +70,11 @@ nav button.active {
 
 .shell-controls .ghost {
   border-color: #374151;
-  align-self: end;
+  background: #fff;
+  color: #111;
+  padding: 0.3rem 0.55rem;
+  min-height: unset;
+  width: 100%;
 }
 
 .shell-main {

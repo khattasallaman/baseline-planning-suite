@@ -204,9 +204,12 @@ export default function ShellApp() {
               <option value="delivery">Delivery</option>
             </select>
           </label>
-          <button type="button" className="ghost" onClick={reload}>
-            Reload config
-          </button>
+          <label>
+            Config
+            <button type="button" className="ghost" onClick={reload}>
+              Reload
+            </button>
+          </label>
         </div>
       </header>
 
